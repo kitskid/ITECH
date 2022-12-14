@@ -4,6 +4,7 @@ package com.example.securityapplication.controllers;
 
 import com.example.securityapplication.models.PersonReact;
 import com.example.securityapplication.models.Provider;
+import com.example.securityapplication.repositories.PersonReactRepository;
 import com.example.securityapplication.repositories.ProviderRepository;
 import com.example.securityapplication.response.AddUserResponse;
 import com.example.securityapplication.response.LoginResponse;
@@ -41,15 +42,17 @@ public class ProviderController {
     private final ProviderService providerService;
     private final ProviderValidator providerValidator;
     private final PersonReactRegistrationService personReactRegistrationService;
+    private final PersonReactRepository personReactRepository;
 
     @Value("${upload.path}")
     private String uploadPath;
 
-    public ProviderController(ProviderRepository providerRepository, ProviderService providerService, ProviderValidator providerValidator, PersonReactRegistrationService personReactRegistrationService) {
+    public ProviderController(ProviderRepository providerRepository, ProviderService providerService, ProviderValidator providerValidator, PersonReactRegistrationService personReactRegistrationService, PersonReactRepository personReactRepository) {
         this.providerRepository = providerRepository;
         this.providerService = providerService;
         this.providerValidator = providerValidator;
         this.personReactRegistrationService = personReactRegistrationService;
+        this.personReactRepository = personReactRepository;
     }
 
     @GetMapping("/main/api/providers")
@@ -85,31 +88,10 @@ public class ProviderController {
     }
 
     @PostMapping("/main/api/provider/update")
-    public ResponseEntity<?> postProviderAdmin(@RequestBody @Valid Provider provider, BindingResult bindingResult){
+    public ResponseEntity<?> postProviderAdmin(@RequestBody Provider provider){
 
         AddUserResponse response = new AddUserResponse();
-        providerValidator.validate(provider, bindingResult);
-        if(bindingResult.hasErrors()){
-
-            List<FieldError> errors = bindingResult.getFieldErrors();
-            for (FieldError error : errors ) {
-                switch (error.getField()){
-                    case "password" :
-                        response.setPassword(error.getDefaultMessage());
-                        break;
-                    case "login" :
-                        response.setLogin(error.getDefaultMessage());
-                        break;
-                    case "email" :
-                        response.setEmail(error.getDefaultMessage());
-                        break;
-                    default:
-                        response.setMessage("Неизвестная ошибка на стороне сервера");
-                }
-            }
-            return new ResponseEntity<>(response, HttpStatus.NOT_ACCEPTABLE);
-        }
-        Optional<Provider> providerBase = providerService.findById(provider.getId());
+        Optional<Provider> providerBase = providerService.findByLogin(provider.getLogin());
         if (providerBase.isEmpty()){
             response.setMessage("Продавец не определен системой");
             return new ResponseEntity<>(response, HttpStatus.NOT_ACCEPTABLE);
@@ -121,6 +103,15 @@ public class ProviderController {
             providerBase.get().setRole(provider.getRole());
 
         providerService.save(providerBase.get());
+
+        PersonReact personReact = personReactRepository.findByLogin(providerBase.get().getLogin()).get();
+        personReact.setLogin(provider.getLogin());
+        personReact.setEmail(provider.getEmail());
+        personReact.setPhone(provider.getPhone());
+        personReact.setPassword(provider.getPassword());
+        personReact.setFileName(provider.getFileName());
+        personReactRegistrationService.save(personReact);
+        personReact.setRole("ROLE_PROVIDER");
 
         response.setMessage("Серевер сохранил Продавца");
         return ResponseEntity.ok(response);
@@ -156,6 +147,7 @@ public class ProviderController {
         personReact.setEmail(provider.getEmail());
         personReact.setPhone(provider.getPhone());
         personReact.setPassword(provider.getPassword());
+        personReact.setFileName(provider.getFileName());
         personReactRegistrationService.save(personReact);
         personReact.setRole("ROLE_PROVIDER");
 
@@ -171,6 +163,7 @@ public class ProviderController {
 
         AddUserResponse response = new AddUserResponse();
         Optional<Provider> provider = providerService.findByLogin(login);
+        Optional<PersonReact> personReact = personReactRepository.findByLogin(login);
         if (provider.isEmpty()){
             response.setMessage("Покупатель не определен системой");
             return new ResponseEntity<>(response, HttpStatus.NOT_ACCEPTABLE);
@@ -185,6 +178,9 @@ public class ProviderController {
                 file.transferTo(new File(uploadPath + "/provider/" + resultFileName));
 
                 provider.get().setFileName(resultFileName);
+                personReact.get().setFileName(resultFileName);
+                personReactRepository.save(personReact.get());
+                personReact.get().setRole("ROLE_PROVIDER");
                 providerService.save(provider.get());
 
                 response.setMessage("Серевер сохранил аватар");

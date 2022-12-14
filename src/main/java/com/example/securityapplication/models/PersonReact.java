@@ -18,7 +18,7 @@ public class PersonReact {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @NotEmpty(message = "Имя не может быть пустым")
-    @Size(min = 5, max = 100, message = "Имя должно быть от 5 и до 100 символов")
+    @Size(min = 2, max = 100, message = "Имя должно быть от 2 и до 100 символов")
     @Column(name = "login")
     private String login;
     //@NotEmpty(message = "Фамилия не может быть пустой")

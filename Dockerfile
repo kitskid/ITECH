@@ -5,12 +5,12 @@ FROM maven:3.8.4-openjdk-17 AS build
 WORKDIR /app
 
 # Копируем файл pom.xml и загружаем зависимости
-COPY pom.xml ./
+COPY pom.xml /app
 RUN mvn dependency:go-offline
 
 # Копируем исходный код и компилируем его
-COPY src ./src
-RUN mvn clean package -DskipTests
+COPY src /app/src
+RUN mvn clean package -DskipTests && ls -l /app/target
 
 # Этап 2: Запуск
 FROM openjdk:17-slim

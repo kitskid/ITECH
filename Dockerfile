@@ -13,7 +13,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Этап 2: Запуск
-FROM openjdk:17-jre-slim
+FROM openjdk:17-slim
 
 # Копируем собранный .jar файл из этапа сборки
 COPY --from=build /app/target/my-app.jar /my-app.jar

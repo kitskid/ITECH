@@ -1,5 +1,5 @@
 # Этап 1: Сборка
-FROM maven:3.8.4-openjdk-11 AS build
+FROM maven:3.8.4-openjdk-17 AS build
 
 # Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
@@ -13,7 +13,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Этап 2: Запуск
-FROM openjdk:11-jre-slim
+FROM openjdk:17-jre-slim
 
 # Копируем собранный .jar файл из этапа сборки
 COPY --from=build /app/target/my-app.jar /my-app.jar
@@ -23,3 +23,4 @@ EXPOSE 8080
 
 # Запускаем приложение
 ENTRYPOINT ["java", "-jar", "/my-app.jar"]
+

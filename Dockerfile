@@ -16,11 +16,11 @@ RUN mvn clean package -DskipTests && ls -l /app/target
 FROM openjdk:17-slim
 
 # Копируем собранный .jar файл из этапа сборки
-COPY --from=build /app/target/my-app.jar /my-app.jar
+COPY --from=build /app/target/SecurityApplication-0.0.1-SNAPSHOT.jar /app.jar
 
 # Открываем порт для приложения (если нужно)
 EXPOSE 8080
 
 # Запускаем приложение
-ENTRYPOINT ["java", "-jar", "/my-app.jar"]
+ENTRYPOINT ["java", "-jar", "/app.jar"]
 
